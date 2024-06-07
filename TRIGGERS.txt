@@ -1,0 +1,41 @@
+TRIGGERS:
+types:
+database & application
+
+database:
+using dml,ddl events triggers can be performed
+
+application:
+triggers performed the events that call in some application
+
+dml triggers:
+|->statement level
+|->row level
+
+statement:
+default trigger
+Executes only once even if no rows affected.
+
+Create trigger test_before_update
+Before update
+On test
+Begin
+DBMS_OUTPUT.PUT_LINE ('TRIGGER EXECUTED SUCCESSFULLY');
+End;
+
+row level:
+Use FOR EACH ROW clause
+executes once for each row affected
+
+Create or replace trigger test_before_update
+Before update
+On test
+Begin
+DBMS_OUTPUT.PUT_LINE ('TRIGGER EXECUTED SUCCESSFULLY');
+End;
+
+trigger options:
+compile->If trigger facing any issue, we can compile the trigger again.compile
+disable->Disabling trigger help users not to fire triggers when any event has occurred. disable all triggers
+we can enable the trigger above using enable all triggers
+drop->
