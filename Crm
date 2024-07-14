@@ -1,0 +1,251 @@
+using BankingCRM.Models;
+using System.Threading.Tasks;
+
+namespace BankingCRM.Services
+{
+    public interface IAuthService
+    {
+        Task<string> Authenticate(LoginRequest loginRequest);
+        Task Register(RegisterRequest registerRequest);
+    }
+}
+
+
+using BankingCRM.Data;
+using BankingCRM.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+
+namespace BankingCRM.Services
+{
+    public class AuthService : IAuthService
+    {
+        private readonly IConfiguration _configuration;
+        private readonly BankingContext _context;
+
+        public AuthService(IConfiguration configuration, BankingContext context)
+        {
+            _configuration = configuration;
+            _context = context;
+        }
+
+        public async Task<string> Authenticate(LoginRequest loginRequest)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == loginRequest.Username && u.Password == loginRequest.Password);
+
+            if (user == null)
+            {
+                return null;
+            }
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+                }),
+                Expires = DateTime.UtcNow.AddMinutes(Convert.ToInt32(_configuration["Jwt:ExpiresInMinutes"])),
+                Issuer = _configuration["Jwt:Issuer"],
+                Audience = _configuration["Jwt:Audience"],
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
+        public async Task Register(RegisterRequest registerRequest)
+        {
+            var user = new User
+            {
+                Username = registerRequest.Username,
+                Password = registerRequest.Password // Hash the password in a real application
+            };
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+        }
+    }
+}
+
+
+using BankingCRM.Models;
+using BankingCRM.Services;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+
+namespace BankingCRM.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AuthController : ControllerBase
+    {
+        private readonly IAuthService _authService;
+
+        public AuthController(IAuthService authService)
+        {
+            _authService = authService;
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
+        {
+            var token = await _authService.Authenticate(loginRequest);
+            if (token == null)
+            {
+                return Unauthorized();
+            }
+            return Ok(new { Token = token });
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest registerRequest)
+        {
+            await _authService.Register(registerRequest);
+            return Ok();
+        }
+    }
+}
+
+using BankingCRM.Data;
+using BankingCRM.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace BankingCRM.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class CardsController : ControllerBase
+    {
+        private readonly BankingContext _context;
+
+        public CardsController(BankingContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Card>>> GetCards()
+        {
+            return await _context.Cards.ToListAsync();
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Card>> GetCard(int id)
+        {
+            var card = await _context.Cards.FindAsync(id);
+
+            if (card == null)
+            {
+                return NotFound();
+            }
+
+            return card;
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Card>> CreateCard(Card card)
+        {
+            _context.Cards.Add(card);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetCard), new { id = card.Id }, card);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateCard(int id, Card card)
+        {
+            if (id != card.Id)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(card).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!CardExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCard(int id)
+        {
+            var card = await _context.Cards.FindAsync(id);
+            if (card == null)
+            {
+                return NotFound();
+            }
+
+            _context.Cards.Remove(card);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool CardExists(int id)
+        {
+            return _context.Cards.Any(e => e.Id == id);
+        }
+    }
+}
+
+using BankingCRM.Data;
+using BankingCRM.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace BankingCRM.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class LoansController : ControllerBase
+    {
+        private readonly BankingContext _context;
+
+        public LoansController(BankingContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Loan>>> GetLoans()
+        {
+            return await _context.Loans.ToListAsync();
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Loan>> GetLoan(int id)
+        {
+            var loan = await _context.Loans
+
+
