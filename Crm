@@ -249,3 +249,326 @@ namespace BankingCRM.Controllers
             var loan = await _context.Loans
 
 
+using BankingCRM.Data;
+using BankingCRM.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace BankingCRM.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class LoansController : ControllerBase
+    {
+        private readonly BankingContext _context;
+
+        public LoansController(BankingContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Loan>>> GetLoans()
+        {
+            return await _context.Loans.ToListAsync();
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Loan>> GetLoan(int id)
+        {
+            var loan = await _context.Loans.FindAsync(id);
+
+            if (loan == null)
+            {
+                return NotFound();
+            }
+
+            return loan;
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Loan>> CreateLoan(Loan loan)
+        {
+            _context.Loans.Add(loan);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetLoan), new { id = loan.Id }, loan);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateLoan(int id, Loan loan)
+        {
+            if (id != loan.Id)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(loan).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!LoanExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteLoan(int id)
+        {
+            var loan = await _context.Loans.FindAsync(id);
+            if (loan == null)
+            {
+                return NotFound();
+            }
+
+            _context.Loans.Remove(loan);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool LoanExists(int id)
+        {
+            return _context.Loans.Any(e => e.Id == id);
+        }
+    }
+}
+
+
+using BankingCRM.Data;
+using BankingCRM.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace BankingCRM.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class DepositsController : ControllerBase
+    {
+        private readonly BankingContext _context;
+
+        public DepositsController(BankingContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Deposit>>> GetDeposits()
+        {
+            return await _context.Deposits.ToListAsync();
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Deposit>> GetDeposit(int id)
+        {
+            var deposit = await _context.Deposits.FindAsync(id);
+
+            if (deposit == null)
+            {
+                return NotFound();
+            }
+
+            return deposit;
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Deposit>> CreateDeposit(Deposit deposit)
+        {
+            _context.Deposits.Add(deposit);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetDeposit), new { id = deposit.Id }, deposit);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateDeposit(int id, Deposit deposit)
+        {
+            if (id != deposit.Id)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(deposit).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!DepositExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteDeposit(int id)
+        {
+            var deposit = await _context.Deposits.FindAsync(id);
+            if (deposit == null)
+            {
+                return NotFound();
+            }
+
+            _context.Deposits.Remove(deposit);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool DepositExists(int id)
+        {
+            return _context.Deposits.Any(e => e.Id == id);
+        }
+    }
+}
+
+using BankingCRM.Data;
+using BankingCRM.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+namespace BankingCRM
+{
+    public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddControllers();
+
+            services.AddDbContext<BankingContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+            services.AddScoped<IAuthService, AuthService>();
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = false;
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = Configuration["Jwt:Issuer"],
+                    ValidAudience = Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                };
+            });
+        }
+
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+
+            app.UseHttpsRedirection();
+            app.UseRouting();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+        }
+    }
+}
+
+
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=YOUR_SERVER;Database=YOUR_DATABASE;Trusted_Connection=True;MultipleActiveResultSets=true"
+  },
+  "Jwt": {
+    "Key": "YOUR_SECRET_KEY",
+    "Issuer": "YOUR_ISSUER",
+    "Audience": "YOUR_AUDIENCE",
+    "ExpiresInMinutes": "60"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "AllowedHosts": "*"
+}
+
+
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
+
+namespace BankingCRM
+{
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            CreateHostBuilder(args).Build().Run();
+        }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                });
+    }
+}
+
+
+Add-Migration InitialCreate
+Update-Database
+
+
+Replace "YOUR_SERVER" and "YOUR_DATABASE" in the connection string with your actual database server and database name.
+Replace "YOUR_SECRET_KEY", "YOUR_ISSUER", and "YOUR_AUDIENCE" in the JWT settings with appropriate values for your application.
