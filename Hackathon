@@ -1,3 +1,107 @@
+@page "/dragdropranking"
+
+<h3>Drag and Drop Ranking Example</h3>
+
+<!-- Initial OK Button to show the modal with the list -->
+<button class="btn btn-primary" @onclick="ShowModal">OK</button>
+
+<!-- Modal for Drag-and-Drop List -->
+@if (isModalVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color:rgba(0, 0, 0, 0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reorder the List</h5>
+                    <button type="button" class="btn-close" @onclick="HideModal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul style="list-style-type: none; padding: 0;">
+                        @foreach (var item in Items)
+                        {
+                            <li draggable="true" 
+                                ondragstart="@((e) => OnDragStart(e, item))"
+                                ondragover="@((e) => OnDragOver(e))"
+                                ondrop="@((e) => OnDrop(e, item))"
+                                style="border: 1px solid black; padding: 10px; margin-bottom: 5px; cursor: move;">
+                                @item
+                            </li>
+                        }
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <!-- OK Button to confirm new order -->
+                    <button class="btn btn-primary" @onclick="ConfirmNewOrder">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Display the updated ordered list after confirmation -->
+@if (confirmedOrder != null && confirmedOrder.Count > 0)
+{
+    <h4>New Ranking:</h4>
+    <ul>
+        @foreach (var item in confirmedOrder)
+        {
+            <li>@item</li>
+        }
+    </ul>
+}
+
+@code {
+    private List<string> Items = new List<string> { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
+    private List<string> confirmedOrder;
+    private string draggingItem;
+    private bool isModalVisible = false;
+
+    [Inject] IJSRuntime JS { get; set; }
+
+    // Show the modal when OK button is clicked
+    private void ShowModal()
+    {
+        isModalVisible = true;
+    }
+
+    // Hide the modal
+    private void HideModal()
+    {
+        isModalVisible = false;
+    }
+
+    // Handle drag start event
+    private void OnDragStart(DragEventArgs e, string item)
+    {
+        draggingItem = item;
+    }
+
+    // Handle drag over event, prevent default behavior
+    private async Task OnDragOver(DragEventArgs e)
+    {
+        await JS.InvokeVoidAsync("preventDefaultWrapper", e);
+    }
+
+    // Handle drop event to reorder the list
+    private void OnDrop(DragEventArgs e, string dropTargetItem)
+    {
+        var draggedIndex = Items.IndexOf(draggingItem);
+        var targetIndex = Items.IndexOf(dropTargetItem);
+
+        if (draggedIndex != targetIndex)
+        {
+            Items.RemoveAt(draggedIndex);
+            Items.Insert(targetIndex, draggingItem);
+        }
+    }
+
+    // Confirm new order of the list
+    private void ConfirmNewOrder()
+    {
+        confirmedOrder = new List<string>(Items);
+        HideModal(); // Close the modal after confirmation
+    }
+}
 @page "/dragdroplist"
 
 <h3>Drag and Drop Reordering Example</h3>
