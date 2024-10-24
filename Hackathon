@@ -1,3 +1,53 @@
+@page "/dragdroplist"
+
+<h3>Drag and Drop Reordering Example</h3>
+
+<ul style="list-style-type: none; padding: 0;">
+    @foreach (var item in Items)
+    {
+        <li draggable="true" 
+            ondragstart="@((e) => OnDragStart(e, item))"
+            ondragover="@OnDragOver"
+            ondrop="@((e) => OnDrop(e, item))"
+            style="border: 1px solid black; padding: 10px; margin-bottom: 5px; cursor: move;">
+            @item
+        </li>
+    }
+</ul>
+
+@code {
+    private List<string> Items = new List<string> { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
+
+    private string draggingItem;
+
+    // When dragging starts, store the item being dragged
+    private void OnDragStart(DragEventArgs e, string item)
+    {
+        draggingItem = item;
+    }
+
+    // Allow the drop by preventing the default behavior
+    private void OnDragOver(DragEventArgs e)
+    {
+        e.PreventDefault();
+    }
+
+    // When an item is dropped, reorder the list
+    private void OnDrop(DragEventArgs e, string dropTargetItem)
+    {
+        // Get the indexes of the dragged item and the drop target item
+        var draggedIndex = Items.IndexOf(draggingItem);
+        var targetIndex = Items.IndexOf(dropTargetItem);
+
+        if (draggedIndex != targetIndex)
+        {
+            // Remove the item from the original position
+            Items.RemoveAt(draggedIndex);
+            // Insert the dragged item at the new position
+            Items.Insert(targetIndex, draggingItem);
+        }
+    }
+}
 @page "/progress"
 
 <div class="container mt-5">
