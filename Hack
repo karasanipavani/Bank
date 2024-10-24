@@ -1,0 +1,72 @@
+<body>
+    <div class="container mt-5">
+        <form>
+            <!-- ID Input -->
+            <div class="mb-3">
+                <label for="idInput" class="form-label">Id</label>
+                <input type="text" class="form-control" id="idInput" placeholder="Enter your Id">
+            </div>
+            <button type="button" class="btn btn-primary">Ok</button>
+            
+            <!-- Additional Text Boxes -->
+            <div class="mt-4">
+                <div class="mb-3">
+                    <label for="input1" class="form-label">Field 1</label>
+                    <input type="text" class="form-control" id="input1" placeholder="Enter value">
+                </div>
+                <div class="mb-3">
+                    <label for="input2" class="form-label">Field 2</label>
+                    <input type="text" class="form-control" id="input2" placeholder="Enter value">
+                </div>
+                <div class="mb-3">
+                    <label for="input3" class="form-label">Field 3</label>
+                    <input type="text" class="form-control" id="input3" placeholder="Enter value">
+                </div>
+                <div class="mb-3">
+                    <label for="input4" class="form-label">Field 4</label>
+                    <input type="text" class="form-control" id="input4" placeholder="Enter value">
+                </div>
+                <div class="mb-3">
+                    <label for="input5" class="form-label">Field 5</label>
+                    <input type="text" class="form-control" id="input5" placeholder="Enter value">
+                </div>
+            </div>
+            <button type="button" class="btn btn-success">Get Placement</button>
+
+            <!-- Progress Bar Section -->
+            <div class="progress-container">
+                <label for="progressValue" class="form-label">Progress Value</label>
+                <input type="number" class="form-control mb-2" id="progressValue" placeholder="Enter value (0-100)">
+                <input type="range" class="form-range" id="progressRange" min="0" max="100" value="0">
+                <div class="progress mt-2">
+                    <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS and Popper.js (for Bootstrap functionality) -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const progressValue = document.getElementById('progressValue');
+        const progressBar = document.getElementById('progressBar');
+        const progressRange = document.getElementById('progressRange');
+
+        // Update the progress bar when the number input changes
+        progressValue.addEventListener('input', function() {
+            let value = parseInt(progressValue.value);
+            value = isNaN(value) ? 0 : Math.min(100, Math.max(0, value));
+            progressBar.style.width = value + '%';
+            progressBar.setAttribute('aria-valuenow', value);
+            progressRange.value = value;
+        });
+
+        // Update the progress bar when the range slider changes
+        progressRange.addEventListener('input', function() {
+            const value = progressRange.value;
+            progressBar.style.width = value + '%';
+            progressBar.setAttribute('aria-valuenow', value);
+            progressValue.value = value;
+        });
+    </script>
+</body>
