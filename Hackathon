@@ -1,3 +1,108 @@
+@page "/progress"
+
+<div class="container mt-5">
+    <EditForm>
+        <!-- ID Input -->
+        <div class="mb-3">
+            <label for="idInput" class="form-label">Id</label>
+            <InputText class="form-control" id="idInput" @bind-Value="Id" placeholder="Enter your Id" />
+        </div>
+        <button type="button" class="btn btn-primary" @onclick="OnOkClicked">Ok</button>
+
+        <!-- Additional Text Boxes -->
+        <div class="mt-4">
+            <div class="mb-3">
+                <label for="input1" class="form-label">Field 1</label>
+                <InputText class="form-control" id="input1" @bind-Value="Field1" placeholder="Enter value" />
+            </div>
+            <div class="mb-3">
+                <label for="input2" class="form-label">Field 2</label>
+                <InputText class="form-control" id="input2" @bind-Value="Field2" placeholder="Enter value" />
+            </div>
+            <div class="mb-3">
+                <label for="input3" class="form-label">Field 3</label>
+                <InputText class="form-control" id="input3" @bind-Value="Field3" placeholder="Enter value" />
+            </div>
+            <div class="mb-3">
+                <label for="input4" class="form-label">Field 4</label>
+                <InputText class="form-control" id="input4" @bind-Value="Field4" placeholder="Enter value" />
+            </div>
+            <div class="mb-3">
+                <label for="input5" class="form-label">Field 5</label>
+                <InputText class="form-control" id="input5" @bind-Value="Field5" placeholder="Enter value" />
+            </div>
+        </div>
+        <button type="button" class="btn btn-success" @onclick="OnGetPlacementClicked">Get Placement</button>
+
+        <!-- Progress Bar Section -->
+        <div class="progress-container mt-4">
+            <label for="progressValue" class="form-label">Progress Value</label>
+            <!-- Textbox input for number -->
+            <InputNumber class="form-control mb-2" id="progressValue" @bind-Value="ProgressValue" placeholder="Enter value (0-100)" Min="0" Max="100" />
+
+            <!-- Range slider bound to same value -->
+            <InputRange class="form-range" id="progressRange" @bind-Value="ProgressValue" Min="0" Max="100" />
+
+            <div class="progress mt-2">
+                <!-- The progress bar is updated dynamically based on ProgressValue -->
+                <div class="progress-bar" role="progressbar" style="width: @ProgressValue%;" aria-valuenow="@ProgressValue" aria-valuemin="0" aria-valuemax="100">@ProgressValue%</div>
+            </div>
+
+            <!-- Display the status based on the progress value -->
+            <div class="mt-2">
+                <strong>Status:</strong> @ProgressStatus
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private string Id { get; set; }
+    private string Field1 { get; set; }
+    private string Field2 { get; set; }
+    private string Field3 { get; set; }
+    private string Field4 { get; set; }
+    private string Field5 { get; set; }
+
+    // Progress value is bound to both the InputNumber (textbox) and InputRange (slider)
+    private int ProgressValue { get; set; } = 0;
+
+    // Compute the status based on the value of ProgressValue
+    private string ProgressStatus => GetProgressStatus();
+
+    private void OnOkClicked()
+    {
+        // Logic for OK button
+        Console.WriteLine($"ID: {Id}");
+    }
+
+    private void OnGetPlacementClicked()
+    {
+        // Logic for Get Placement button
+        Console.WriteLine("Placement information requested");
+    }
+
+    // Method to return the status based on the progress value
+    private string GetProgressStatus()
+    {
+        if (ProgressValue >= 1 && ProgressValue <= 30)
+        {
+            return "Low";
+        }
+        else if (ProgressValue >= 31 && ProgressValue <= 70)
+        {
+            return "Medium";
+        }
+        else if (ProgressValue >= 71 && ProgressValue <= 100)
+        {
+            return "High";
+        }
+        else
+        {
+            return "No Value";
+        }
+    }
+}
 create a Blazor component with the functionality you've described—a set of text boxes for parameters, an "OK" button, additional text boxes, and a range input that indicates a level based on the selected value—we can follow these steps:
 
 Create a Blazor Component: This component will have:
